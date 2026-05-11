@@ -12,8 +12,10 @@ const signupSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    
     const { email, password, organizationName } = signupSchema.parse(body)
     
+    // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -25,32 +27,50 @@ export async function POST(req: Request) {
       )
     }
     
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
     
-    const organization = await prisma.organization.create({
-      data: {
-        name: organizationName,
-        defaultLowStockThreshold: 5
-      }
-    })
-    
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        organizationId: organization.id,
-        name: email.split('@')[0]
-      }
+    // Create organization and user in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create organization
+      const organization = await tx.organization.create({
+        data: {
+          name: organizationName,
+          defaultLowStockThreshold: 5
+        }
+      })
+      
+      // Create user
+      const user = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          organizationId: organization.id,
+          name: email.split('@')[0]
+        }
+      })
+      
+      return { user, organization }
     })
     
     return NextResponse.json(
-      { message: 'User created successfully', userId: user.id },
+      { message: 'User created successfully', userId: result.user.id },
       { status: 201 }
     )
   } catch (error) {
+    console.error('Signup error:', error)
+    
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error }, { status: 400 })
+      // Fix: Use error.format() or error.issues instead of error.errors
+      return NextResponse.json(
+        { error: error.issues.map(issue => issue.message).join(', ') },
+        { status: 400 }
+      )
     }
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    
+    return NextResponse.json(
+      { error: 'Something went wrong' },
+      { status: 500 }
+    )
   }
 }

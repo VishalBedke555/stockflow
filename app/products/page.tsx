@@ -9,7 +9,9 @@ interface Product {
   id: string
   name: string
   sku: string
+  description: string | null
   quantityOnHand: number
+  costPrice: number | null
   sellingPrice: number | null
   lowStockThreshold: number | null
 }
