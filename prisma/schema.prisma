@@ -8,20 +8,20 @@ datasource db {
 }
 
 model Organization {
-  id                    string    @id @default(cuid())
-  name                  string
-  defaultLowStockThreshold Int   @default(5)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                       String    @id @default(cuid())
+  name                     String
+  defaultLowStockThreshold Int       @default(5)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
   
-  users                 User[]
-  products              Product[]
+  users                    User[]
+  products                 Product[]
 }
 
 model User {
-  id             string    @id @default(cuid())
-  email          string    @unique
-  password       string
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String
   name           String?   @default("")
   organizationId String
   createdAt      DateTime  @default(now())
