@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                    string    @id @default(cuid())
+  name                  string
+  defaultLowStockThreshold Int   @default(5)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  users                 User[]
+  products              Product[]
+}
+
+model User {
+  id             string    @id @default(cuid())
+  email          string    @unique
+  password       string
+  name           String?   @default("")
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id                String    @id @default(cuid())
+  organizationId    String
+  name              String
+  sku               String
+  description       String?
+  quantityOnHand    Int       @default(0)
+  costPrice         Float?
+  sellingPrice      Float?
+  lowStockThreshold Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@unique([organizationId, sku])
+}
